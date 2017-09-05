@@ -51,13 +51,6 @@ start:
         mov     ss, ax          
         mov     sp, 2048        
 
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; And "Jump" there
-
-        push    es
-        push    byte 	RestOfDiskDataLink
-
 
 LoadTheRestOfBootCode:
 
@@ -100,9 +93,13 @@ ReadDiskSectors:
 	mov	al,2Dh
 	mov 	ah,0Eh
 	int	10h
-
-        retf
-
+	push	es
+	pop	cs
+	nop
+	nop
+	nop
+	jmp	RestOfDiskData
+	
 DisplayErrors:
 	add	ah,30h
 	mov	al,ah
@@ -114,7 +111,12 @@ DisplayErrors:
 	jmp	ReadDiskSectors
 
 RestOfDiskDataLink:
+
 	jmp	RestOfDiskData
+
+
+
+
 
 	times 510-($-$$) db 0	; Pad remainder of boot sector with 0s
 	dw 0xAA55		; The standard PC boot signature
