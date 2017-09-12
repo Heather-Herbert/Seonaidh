@@ -2,7 +2,8 @@
 ;   By Heather Herbert
 
 
-	BITS 16
+[BITS 16]      ; 16 bit code generation
+[ORG 0x7C00]   ; Origin location
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -38,18 +39,8 @@ bsFileSystem            DB      "FAT12   "      ; 0x36
 
 start:
 
-	cld
-
-        int     12h
-        shl     ax, 6  
 
 
-        sub     ax, (EndOfDiskData - diskStart)/ 16    
-        mov     es, ax          
-
-        sub     ax, 2048 / 16   
-        mov     ss, ax          
-        mov     sp, 2048        
 
 
 LoadTheRestOfBootCode:
@@ -70,55 +61,56 @@ LoadTheRestOfBootCode:
 ;;	AL = number of sectors read
 ;;	CF = 0 if successful
 ;;	   = 1 if error
+	mov 	di, 	05h
 ReadDiskSectors:
-	mov	ah,0h
-	mov	dl,0h
+	MOV	AX,	CS
+	mov	ds,	ax
+	XOR	BX,	BX
+	MOV	ES,	BX
+	MOV	BX,	0X7E00
+
+	mov 	ah, 	02h				; BIOS read sector function
+	mov 	al, 	02H	; Read as many sectors as we need
+	mov 	ch,	01h				; Track to read
+	mov 	cl,	01h				; Sector to read
+	mov 	dh,	01h				; Head to read
+	mov 	dl,	00h				; Drive to read
 	int	13h
-	add	ah,30h
-	mov	al,ah
-	mov 	ah,0Eh
-	int	10h
+	jnc	DataLoaded
+	dec	di
+	jnz	ReadDiskSectors
 
-	mov     ah, 02h
-	mov	al, 02h
-	xor	cx,cx
-	inc	cl
-	xor	dx,dx
- 	lea	bx,[diskStart]
-	int	13h
-	jc	DisplayErrors
-	add	al,30h
-	mov 	ah,0Eh
-	int	10h
-	mov	al,2Dh
-	mov 	ah,0Eh
-	int	10h
-	push	es
-	pop	cs
-	nop
-	nop
-	nop
-	jmp	RestOfDiskData
-	
-DisplayErrors:
-	add	ah,30h
-	mov	al,ah
-	mov 	ah,0Eh
-	int	10h
-	mov	al,20h
-	mov 	ah,0Eh
-	int	10h	
-	jmp	ReadDiskSectors
-
-RestOfDiskDataLink:
-
-	jmp	RestOfDiskData
+DataLoaded:
 
 
+	cALL	PRINT_LOGO
 
 
+	jmp     RestOfDiskData
 
-	times 510-($-$$) db 0	; Pad remainder of boot sector with 0s
+
+PRINT_LOGO:
+ 	CLD
+	MOV	AX,	CS
+	MOV	DS,	AX
+ 	mov	si, text_string1
+print_string1:      ; Routine: output string in SI to screen 
+  	mov 	ah, 0Eh    ; int 10h 'print char' function 
+ 
+.repeat1: 
+  	lodsb   
+  	cmp 	al, 0 
+  	je 	.WeAreDonePrinting1    ; If char is zero, end of string 
+  	int 	10h      ; Otherwise, print it 
+	jmp 	.repeat1
+
+.WeAreDonePrinting1:
+
+	RET
+
+text_string1 db " Seonaidh By Heather Herbert      ",10,13,0
+
+	times 510-($-$$) db 90h	; Pad remainder of boot sector with 0s
 	dw 0xAA55		; The standard PC boot signature
 
 
@@ -165,7 +157,9 @@ RestOfDiskData:
 ;; then jump to the start of the main code.
 
 ;; Display the welcome message
-	
+	CLD
+	MOV	AX,	CS
+	MOV	DS,	AX
  	mov	si, text_string
 print_string:      ; Routine: output string in SI to screen 
   	mov 	ah, 0Eh    ; int 10h 'print char' function 
