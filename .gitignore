@@ -2,3 +2,7 @@
 Bootloader/boot\.bin
 
 Bootloader/floppy\.img
+
+*.img
+
+SEONAIDH\.com

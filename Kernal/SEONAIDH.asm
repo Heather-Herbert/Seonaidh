@@ -62,59 +62,6 @@ DisplayErrorMessage:
 	jmp		$
 
 
-IntroText		DB	"Seonaidh Version 1.1a by Heather Herbert (2017)",10,13,0
-
-VESAMissing		DB	"VESA not installed",10,13,0
-VESATooLow		DB	"VESA below version 2",10,13,0
-VESADataLoaded		DB	"VESA data loaded and mode set",10,13,0
-GotVESAInfo		DB	"Got VESA Info",10,13,0
-dot			DB	".",0
-
-;VESA Data Block
-VESAInfo:
-VESAInfo_Signature   db   'VESA'      ; 4 signature bytes
-VESAInfo_Version     dw   0           ; VESA version number
-VESAInfo_OEMStringPtr    dd   0          ; Pointer to OEM string
-VESAInfo_Capabilities    times 4 db 0    ; capabilities of the video environment
-VESAInfo_VideoModePtr    dd   0           ; pointer to supported Super VGA modes
-VESAInfo_TotalMemory     dw   0           ; Number of 64kb memory blocks on board
-VESAInfo_Reserved        times 236 db 0 ; Remainder of VgaInfoBlock
-
-Mode_Info:
-ModeInfo_ModeAttributes		dw	1
-ModeInfo_WinAAttributes		db	1
-ModeInfo_WinBAttributes		db	1
-ModeInfo_WinGranularity		dw	1
-ModeInfo_WinSize		dw	1
-ModeInfo_WinASegment		dw	1
-ModeInfo_WinBSegment		dw	1
-ModeInfo_WinFuncPtr		dd	1
-ModeInfo_BytesPerScanLine	dw	1
-ModeInfo_XResolution		dw	1
-ModeInfo_YResolution		dw	1
-ModeInfo_XCharSize		db	1
-ModeInfo_YCharSize		db	1
-ModeInfo_NumberOfPlanes		db	1
-ModeInfo_BitsPerPixel		db	1
-ModeInfo_NumberOfBanks		db	1
-ModeInfo_MemoryModel		db	1
-ModeInfo_BankSize		db	1
-ModeInfo_NumberOfImagePages	db	1
-ModeInfo_Reserved_page		db	1
-ModeInfo_RedMaskSize		db	1
-ModeInfo_RedMaskPos		db	1
-ModeInfo_GreenMaskSize		db	1
-ModeInfo_GreenMaskPos		db	1
-ModeInfo_BlueMaskSize		db	1
-ModeInfo_BlueMaskPos		db	1
-ModeInfo_ReservedMaskSize	db	1
-ModeInfo_ReservedMaskPos	db	1
-ModeInfo_DirectColorModeInfo	db	1
-; VBE 2.0 extensions
-ModeInfo_PhysBasePtr		dd	1
-ModeInfo_OffScreenMemOffset	dd	1
-ModeInfo_OffScreenMemSize	dw	1
-
 PrintCharacter:	;Procedure to print character on screen
 	;Assume that ASCII value is in register AL
 	MOV 		AH, 0x0E	;Tell BIOS that we need to print one charater on screen.
@@ -185,11 +132,83 @@ EnablePMode:
 
     jmp (CODE_DESC - NULL_DESC) : ProtectedMode
 
+;******************
+;* Protected Mode *
+;******************
+bits 32
+
+ProtectedMode:
+    mov     ax, DATA_DESC - NULL_DESC
+    mov     ds, ax ; update data segment
+
+
+
+    .halt:
+        hlt
+        jmp 	.halt
+
+
+
 ;***************
 ;* data fields *
 ;*  &includes  *
 ;***************
-;%include "gdt_32.inc"
+
+
+IntroText		DB	"Seonaidh Version 1.1a by Heather Herbert (2017)",10,13,0
+
+VESAMissing		DB	"VESA not installed",10,13,0
+VESATooLow		DB	"VESA below version 2",10,13,0
+VESADataLoaded		DB	"VESA data loaded and mode set",10,13,0
+GotVESAInfo		DB	"Got VESA Info",10,13,0
+dot			DB	".",0
+
+;VESA Data Block
+VESAInfo:
+VESAInfo_Signature   db   'VESA'      ; 4 signature bytes
+VESAInfo_Version     dw   0           ; VESA version number
+VESAInfo_OEMStringPtr    dd   0          ; Pointer to OEM string
+VESAInfo_Capabilities    times 4 db 0    ; capabilities of the video environment
+VESAInfo_VideoModePtr    dd   0           ; pointer to supported Super VGA modes
+VESAInfo_TotalMemory     dw   0           ; Number of 64kb memory blocks on board
+VESAInfo_Reserved        times 236 db 0 ; Remainder of VgaInfoBlock
+
+Mode_Info:
+ModeInfo_ModeAttributes		dw	1
+ModeInfo_WinAAttributes		db	1
+ModeInfo_WinBAttributes		db	1
+ModeInfo_WinGranularity		dw	1
+ModeInfo_WinSize		dw	1
+ModeInfo_WinASegment		dw	1
+ModeInfo_WinBSegment		dw	1
+ModeInfo_WinFuncPtr		dd	1
+ModeInfo_BytesPerScanLine	dw	1
+ModeInfo_XResolution		dw	1
+ModeInfo_YResolution		dw	1
+ModeInfo_XCharSize		db	1
+ModeInfo_YCharSize		db	1
+ModeInfo_NumberOfPlanes		db	1
+ModeInfo_BitsPerPixel		db	1
+ModeInfo_NumberOfBanks		db	1
+ModeInfo_MemoryModel		db	1
+ModeInfo_BankSize		db	1
+ModeInfo_NumberOfImagePages	db	1
+ModeInfo_Reserved_page		db	1
+ModeInfo_RedMaskSize		db	1
+ModeInfo_RedMaskPos		db	1
+ModeInfo_GreenMaskSize		db	1
+ModeInfo_GreenMaskPos		db	1
+ModeInfo_BlueMaskSize		db	1
+ModeInfo_BlueMaskPos		db	1
+ModeInfo_ReservedMaskSize	db	1
+ModeInfo_ReservedMaskPos	db	1
+ModeInfo_DirectColorModeInfo	db	1
+; VBE 2.0 extensions
+ModeInfo_PhysBasePtr		dd	1
+ModeInfo_OffScreenMemOffset	dd	1
+ModeInfo_OffScreenMemSize	dw	1
+
+
 ;*********************************
 ;* Global Descriptor Table (GDT) *
 ;*********************************
@@ -216,23 +235,6 @@ DATA_DESC:
 gdtr:
     Limit dw gdtr - NULL_DESC - 1 ; length of GDT
     Base dd NULL_DESC   ; base of GDT
-
-;******************
-;* Protected Mode *
-;******************
-bits 32
-
-ProtectedMode:
-    mov     ax, DATA_DESC - NULL_DESC
-    mov     ds, ax ; update data segment
-
-
-
-    .halt:
-        hlt
-        jmp 	.halt
-
-
 
 
 
